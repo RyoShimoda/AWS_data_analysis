@@ -73,6 +73,18 @@ S3 → Athena → Redshift → EC2 / Python
 - 今後の売上・商品・配送に関する分析に使用する予定
 ---
 
+## 7.paymentsテーブル作成
+
+- S3上の`olist_order_payments_dataset.csv`をAthenaの外部テーブルとして登録
+- 注文ID、支払い方法、支払い回数、支払い金額などの項目を取得できることを確認
+- 今後の支払い方法や注文金額に関する分析に使用する予定
+
+### データ型について
+
+- `string`はIDや文字列として扱う項目に使用
+- `double`は商品価格や送料など、小数を含む数値項目に使用
+- 日時項目については、現時点では`string`として読み込み、分析時に必要に応じて`timestamp`へ変換する方針
+
 ## Next Steps
 
 - order_itemsテーブル作成
