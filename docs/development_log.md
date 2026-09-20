@@ -37,58 +37,68 @@ S3 → Athena → Redshift → EC2 / Python
 
 
 ## 2026-09-20
-### 1. ordersテーブル作成
+### 3. ordersテーブル作成
 
 - S3上の`olist_orders_dataset.csv`をAthenaの外部テーブルとして登録
 - CSVのヘッダーを読み飛ばす設定を追加
 - 動作確認を実施
 
-### 2. customersテーブル作成
+### 4. customersテーブル作成
 
 - S3上の`olist_customers_dataset.csv`をAthenaの外部テーブルとして登録
 - `customers`テーブルの読み込みを確認
 
-### 3. orders × customers JOIN
+### 5. orders × customers JOIN
 
 - `customer_id`をキーとしてordersとcustomersをJOIN
 - 注文情報と顧客の地域情報を組み合わせて取得できることを確認
 
-### 4. Timestamp型について
+### 6. Timestamp型について
 
 - ordersテーブルの日時列を`timestamp`型として定義した際にエラーが発生
 - `string`型では正常に読み込み・JOINできることを確認
 - 現時点では日時列を`string`として保持し、分析時にtimestampへ変換する方針とした
 
-### 5. GitHub管理
+### 7. GitHub管理
 
 - GitHubリポジトリを作成
 - SourceTreeとGitHubを接続
 - `sql/athena/`ディレクトリを作成
 - Athenaで使用したSQLをGitHubで管理する方針とした
 
-### 6. order_itemsテーブル作成
+### 8. order_itemsテーブル作成
 
 - S3上の`olist_order_items_dataset.csv`をAthenaの外部テーブルとして登録
 - 注文ID、商品ID、販売者ID、商品価格、送料などの項目を取得できることを確認
 - 今後の売上・商品・配送に関する分析に使用する予定
 ---
 
-## 7.paymentsテーブル作成
+### 9.paymentsテーブル作成
 
 - S3上の`olist_order_payments_dataset.csv`をAthenaの外部テーブルとして登録
 - 注文ID、支払い方法、支払い回数、支払い金額などの項目を取得できることを確認
 - 今後の支払い方法や注文金額に関する分析に使用する予定
 
-### データ型について
+### 10.データ型について
 
 - `string`はIDや文字列として扱う項目に使用
 - `double`は商品価格や送料など、小数を含む数値項目に使用
 - 日時項目については、現時点では`string`として読み込み、分析時に必要に応じて`timestamp`へ変換する方針
 
+### 11.reviewsテーブル作成
+
+- S3上の`olist_order_reviews_dataset.csv`をAthenaの外部テーブルとして登録
+- レビューID、注文ID、評価スコア、レビューコメント、レビュー日時などの項目を取得できることを確認
+- 今後のレビュー評価と配送状況・商品・注文情報などの関係分析に使用する予定
+
+### 12.int型について
+
+- reviewsテーブルの`review_score`を`int`型として定義した際にエラーが発生
+- `string`型では正常に読み込みできることを確認
+- 現時点では`revies_socore`を`string`として保持し、分析時に`int`へ変換する方針とした
+
 ## Next Steps
 
-- order_itemsテーブル作成
-- paymentsテーブル作成
 - reviewsテーブル作成
 - 複数テーブルを使用したSQL分析
 - Redshift環境構築
