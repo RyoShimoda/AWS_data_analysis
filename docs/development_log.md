@@ -97,9 +97,13 @@ S3 → Athena → Redshift → EC2 / Python
 - `string`型では正常に読み込みできることを確認
 - 現時点では`revies_socore`を`string`として保持し、分析時に`int`へ変換する方針とした
 
-## Next Steps
+### 13. orders・order_items・reviewsのJOIN
 
-- reviewsテーブル作成
+- `order_id`をキーとして`orders`、`order_items`、`reviews`の3テーブルをJOIN
+- 注文情報、商品価格、送料、レビュー評価を1つのデータセットとして取得
+- 今後、商品価格・送料・配送状況とレビュー評価の関係を分析するための基礎データとして使用する
+
+## Next Steps
 - 複数テーブルを使用したSQL分析
 - Redshift環境構築
 - EC2環境構築
