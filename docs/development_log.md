@@ -119,6 +119,14 @@ S3 → Athena → Redshift → EC2 / Python
 - 注文単位の集計結果とレビュー評価をJOINし、注文ごとの分析用データを作成
 - JOINによるデータ粒度の変化を確認し、分析単位を意識してSQLを設計する重要性を学習
 
+## 2026.9.22
+### 16. 15の続き
+
+- `review_score`を確認すると、空欄、1-5以外の文字列が含まれていることを確認。
+- その数を確認し、全体に対し数が少ないことを確認（60行）
+- `order_id`が空、`order_id`がNULL、`review_score`が1-5以外を除外し、`orde_id`ごとの`review_score`を集計
+- その集計クエリをCTEとして挿入し、10_create_order_summaryを10_order_level_summaryに変更。
+
 ## Next Steps
 - 複数テーブルを使用したSQL分析
 - Redshift環境構築
