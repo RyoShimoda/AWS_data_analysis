@@ -57,6 +57,20 @@ SPは注文数・GMVの規模が最大ですが、平均注文額は125.12で、
 
 配送遅延分析の対象95,830注文とは抽出条件が異なります。売上集計対象96,478注文のうち、配送遅延分析で必要な配送日と有効レビューの両方がそろう注文は95,824件でした。分析ごとに必要な情報が異なるため、対象件数を直接比較せず、各分析で条件を明記します。
 
+### 商品カテゴリ・顧客州別の売上
+
+商品明細を商品・カテゴリ翻訳テーブルと結合し、配達済み注文を顧客州・カテゴリ別に集計しました。NotebookでCSVの列・型・欠損・重複を確認した後、商品カテゴリ別と州別、州×カテゴリ別にGMVを集計しています。
+
+- 集計結果：1,388行、27州、未分類を含む74カテゴリ
+- 全体GMV上位：`health_beauty` 1,233,131.72、`watches_gifts` 1,166,176.98、`bed_bath_table` 1,023,434.76
+- GMV上位3州：SP 5,067,633.16、RJ 1,759,651.13、MG 1,552,481.83
+- 州内GMV上位カテゴリ：SPは`bed_bath_table` 472,238.07、RJは`watches_gifts` 174,895.01、MGは`health_beauty` 154,324.15
+- 未分類カテゴリ：GMV 170,726.63（全体の約1.29%）
+- [商品カテゴリ・顧客州別の分析Notebook](notebooks/sales_by_category_state.ipynb)
+- [商品カテゴリ・顧客州別の売上集計SQL](sql/athena/18_sales_by_category_state.sql)
+
+全体と州内でGMV上位のカテゴリが異なるため、地域ごとに販売構成が異なる可能性があります。これは追加検証する仮説候補であり、カテゴリの選択や販促施策で売上が増えることを示すものではありません。`category_order_count`はそのカテゴリを含む注文数です。同じ注文に複数カテゴリの商品が含まれる場合はカテゴリごとに数えるため、カテゴリ別の注文数を合計してもユニークな注文数にはなりません。原価・販促費等がないため、この集計から利益は算出できません。
+
 ### 注文金額・送料とレビュー評価
 
 注文に複数の商品が含まれることを考慮し、商品単位の明細を注文単位に集約してからレビュー情報と結合しました。レビュー評価別に注文金額と送料を比較しています。
@@ -114,12 +128,14 @@ python -m pip install -r requirements.txt
 
 次回以降は`.\.venv\Scripts\Activate.ps1`で有効化します。Positron / Jupyter Notebookを使う場合は、Pythonインタープリターとしてプロジェクト内の`.venv`を選択してください。
 
-Notebookの実行には、OlistデータセットとAWS環境（S3・Athena）が必要です。SQLの結果をローカルの`data/`に保存してください。現在の分析Notebookは`data/review_order_summary.csv`と`data/delivery_delay_review_summary.csv`を読み込みます。これらは[`12_create_review_order_summary.sql`](sql/athena/12_create_review_order_summary.sql)と[`13_create_delivery_delay_summary.sql`](sql/athena/13_create_delivery_delay_summary.sql)から作成できます。データファイル自体はライセンス条件と再配布の可否を確認し、GitHubには含めない運用です。AWSの接続設定や認証情報はREADMEやNotebookに記載しないでください。
+Notebookの実行には、OlistデータセットとAWS環境（S3・Athena）が必要です。SQLの結果をローカルの`data/`に保存してください。レビュー分析では`data/review_order_summary.csv`と`data/delivery_delay_review_summary.csv`を読み込み、これらは[`12_create_review_order_summary.sql`](sql/athena/12_create_review_order_summary.sql)と[`13_create_delivery_delay_summary.sql`](sql/athena/13_create_delivery_delay_summary.sql)から作成できます。売上分析では[`14_sales_baseline_by_month_state.sql`](sql/athena/14_sales_baseline_by_month_state.sql)の結果を`data/sales_baseline_by_month_state.csv`として、[`18_sales_by_category_state.sql`](sql/athena/18_sales_by_category_state.sql)の結果を`data/sales_by_category_state.csv`として保存します。データファイル自体はライセンス条件と再配布の可否を確認し、GitHubには含めない運用です。AWSの接続設定や認証情報はREADMEやNotebookに記載しないでください。
 
 ## ビジネス上の示唆と今後の課題
 
-- 月次・顧客州別の売上基準値を確認し、季節性や期間途中の月を考慮して比較する
-- 商品カテゴリ・販売者別の売上と注文数を追加し、機会のあるセグメントを特定する
+- 初期月や期間途中の月のデータ範囲を確認し、比較に使う期間を決める
+- 未分類カテゴリの内訳を調べ、商品情報の結合状況を確認する
+- 月別・カテゴリ別の売上を確認し、地域差と季節変動を分けて考える
+- 販売者・リピーター等の情報を追加し、改善仮説をさらに絞る
 - 売上規模に加え、平均注文額・低評価率・遅延率を使って施策候補を絞る
 - 再購入や利益を測れるデータの有無を確認し、売上増加と利益改善を区別する
 - 施策を試せる場合は比較群を設け、施策前後の売上・注文数・利益を評価する
