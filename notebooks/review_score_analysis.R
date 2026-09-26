@@ -3,7 +3,7 @@ library(ggplot2)
 
 # data読み込み
 getwd()
-df_review_order <- read.csv("data/analysis/review_order_summary.csv")
+df_review_order <- read.csv("data/review_order_summary.csv")
 
 psych::describeBy(
   df_review_order$total_price, 
