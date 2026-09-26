@@ -1,19 +1,21 @@
 # AWS_data_analysis
 
-OlistのブラジルECサイトデータを使い、注文金額・送料・配送状況と顧客レビューの関係を分析するプロジェクトです。AWS（S3・Athena）とSQLでデータを準備し、Python（Positron / Jupyter Notebook）で分析しています。分析結果を売り上げ向上、顧客体験や配送・販売施策の改善に結びつけることを目的としてます。
+OlistのブラジルECサイトデータを使い、売上増加につながる改善候補を探るプロジェクトです。AWS（S3・Athena）とSQLでデータを準備し、Python（Positron / Jupyter Notebook）で注文・顧客体験を分析します。売上指標の基準値を作り、地域・商品・販売者などの違いから施策仮説を選び、実施可能な施策は比較検証することを目指します。
 
 ## プロジェクトの目的
 
-- 注文金額・送料・配送状況とレビュー評価の関係を明らかにする
-- 顧客の低評価につながる要因や、改善の優先順位を検討する
-- 低評価予測を活用し、問題が起きやすい注文を早期に把握できる可能性を評価する
-- 結果の実務上の意味と限界を整理し、具体的な改善施策の検討につなげる
+- 売上（GMV）・注文数・平均注文額の基準値と変化を把握する
+- 地域・商品カテゴリ・販売者などに分け、売上機会と顧客体験の課題を探る
+- 配送やレビューとの関連を、施策対象を見つけるための補助情報として使う
+- 施策仮説を立て、可能であれば比較群を設けて売上・利益への効果を検証する
 
 ## データ
 
 - **データセット:** [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 - **主なデータ:** 注文、商品、送料、支払い、レビュー、配送に関する情報
-- **利用条件:** データ提供元の利用条件に従います。元データはこのリポジトリに含めません。
+- **ライセンス:** [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+- **出典表記:** Olist, “Brazilian E-Commerce Public Dataset by Olist” ([Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). このプロジェクトで加工したデータを共有する場合は、出典・ライセンス・変更内容を明記し、ライセンス条件を確認します。
+- **データの保管:** 元データと注文単位の分析用CSVはローカルの`data/`に置き、GitHubには含めません。`data/`は`.gitignore`で除外しています。
 
 ## 使用技術
 
@@ -26,10 +28,10 @@ OlistのブラジルECサイトデータを使い、注文金額・送料・配�
 
 ```text
 AWS_data_analysis/
-├── data/             # ローカルの分析データ（公開対象に含めない）
+├── data/             # ローカル分析データ（Git管理対象外）
 ├── docs/
 │   └── development_log.md
-├── images/           # 公開可能な分析図
+├── images/           # 分析図
 ├── notebooks/        # Python / Rによる分析
 ├── sql/
 │   ├── athena/       # Athena用SQL
@@ -39,6 +41,10 @@ AWS_data_analysis/
 ```
 
 ## 分析内容
+
+### 売上増加に向けた基準分析（準備中）
+
+次の分析として、商品価格の合計をGMV（売上の代理指標）とし、配達済み注文の月次推移・平均注文額・顧客州別の規模を確認する予定です。低評価率と配送遅延率も併記し、次の調査対象を選びます。利益や施策の因果効果を示す分析ではありません。SQLとNotebookは準備ができ次第ここに追加します。
 
 ### 注文金額・送料とレビュー評価
 
@@ -64,7 +70,7 @@ Kruskal–Wallis検定では、注文金額・送料ともにレビュー評価�
 
 ### 低評価予測モデル
 
-- [低評価予測Notebook](notebooks/predict_row_review.ipynb)
+- [低評価予測Notebook](notebooks/predict_low_review.ipynb)
 - 低評価：レビュー1～2点（`low_review = 1`）
 - 説明変数：注文金額、送料、配送遅延日数
 - モデル：ロジスティック回帰
@@ -72,26 +78,44 @@ Kruskal–Wallis検定では、注文金額・送料ともにレビュー評価�
 
 データ中の低評価は12.77%、通常評価は87.23%でした。クラスに偏りがあるため、Accuracyだけでは性能を判断せず、PrecisionやRecallなども確認しています。
 
-初期分析ではROC-AUC 0.6744でした。低評価を事前に把握する仕組みが業務上有用か、またどの程度の誤検知・見逃しが許容されるかを判断するには、性能の改善と運用コストの検討が必要です。この段階ではTestデータをしきい値比較にも使っているため、数値は学習用の途中結果です。最終性能とは扱わず、次にTrain / Validation / Testへ分割し、Validationでしきい値を決めてからTestで評価します。
+Train / Validation / Testを60 / 20 / 20に分割し、ValidationでF1が最大となったしきい値0.24を選び、Testで最終評価しました。
+
+| Test指標 | 結果 |
+|---|---:|
+| Accuracy | 0.8860 |
+| Precision | 0.5919 |
+| Recall | 0.3472 |
+| F1-score | 0.4377 |
+| ROC-AUC | 0.6838 |
+
+このモデルは低評価の傾向を一定程度識別しましたが、低評価注文の約65%は見逃しています。現時点では改善施策の対象を選ぶための探索分析であり、売上増加や配送改善の因果効果を示すものではありません。説明変数には配送後に確定する配送遅延日数が含まれるため、購入前の予測にはそのまま使えません。
 
 ## 実行環境について
 
-Notebookの実行には、OlistデータセットとAWS環境（S3・Athena）が必要です。データの取得とAWSの設定は、各自の環境で行ってください。SQL内のデータ保存先や接続設定は、利用環境に合わせて確認してください。
+Pythonの依存パッケージはプロジェクト直下の`.venv`に分離します。Windows PowerShellでは、初回に次のコマンドを実行してください。
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+次回以降は`.\.venv\Scripts\Activate.ps1`で有効化します。Positron / Jupyter Notebookを使う場合は、Pythonインタープリターとしてプロジェクト内の`.venv`を選択してください。
+
+Notebookの実行には、OlistデータセットとAWS環境（S3・Athena）が必要です。SQLの結果をローカルの`data/`に保存してください。現在の分析Notebookは`data/review_order_summary.csv`と`data/delivery_delay_review_summary.csv`を読み込みます。これらは[`12_create_review_order_summary.sql`](sql/athena/12_create_review_order_summary.sql)と[`13_create_delivery_delay_summary.sql`](sql/athena/13_create_delivery_delay_summary.sql)から作成できます。データファイル自体はライセンス条件と再配布の可否を確認し、GitHubには含めない運用です。AWSの接続設定や認証情報はREADMEやNotebookに記載しないでください。
 
 ## ビジネス上の示唆と今後の課題
 
-- Train / Validation / Testの3分割で予測モデルを再評価する
-- Validationデータでしきい値を決め、Testデータで最終評価する
-- 配送遅延や注文条件など、改善可能な要因と低評価の関係を追加分析する
-- 低評価の早期把握を業務に使う場合の対応方法、誤検知・見逃しのコスト、期待効果を検討する
-- 結果の限界と適用条件を明らかにし、施策の判断に使える形で示唆をまとめる
+- 月次・顧客州別の売上基準値を確認し、季節性や期間途中の月を考慮して比較する
+- 商品カテゴリ・販売者別の売上と注文数を追加し、機会のあるセグメントを特定する
+- 売上規模に加え、平均注文額・低評価率・遅延率を使って施策候補を絞る
+- 再購入や利益を測れるデータの有無を確認し、売上増加と利益改善を区別する
+- 施策を試せる場合は比較群を設け、施策前後の売上・注文数・利益を評価する
+- 低評価予測モデルは、運用上の対応方法と費用対効果が明確になった段階で再評価する
 - NotebookとSQLの実行条件、前処理を整理して分析の再現性を高める
 - 確認できた結果とビジネス上の示唆を、このREADMEと[`development_log.md`](docs/development_log.md)に反映する
 
 ## 更新方針
 
 READMEはプロジェクトの概要と、現時点で確認できた主な結果を伝える入口として保ちます。分析の試行錯誤や日ごとの判断は[`development_log.md`](docs/development_log.md)に記録し、節目ごとにREADMEへ確定した内容を反映します。
-<<<<<<< HEAD
-=======
-
->>>>>>> 75c32d5b18897970a785b0c39ae94c349f9b21a6
